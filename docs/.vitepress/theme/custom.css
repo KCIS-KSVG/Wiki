@@ -1,0 +1,48 @@
+/* 3. 移动端布局 (屏幕宽度 < 960px)：图片在顶部居中，文字在下方 */
+@media (max-width: 959px) {
+  .VPHero .container {
+    display: flex !important;
+    flex-direction: column !important;
+    padding-top: 0px !important; /* 彻底移除顶部留白 */
+  }
+
+  .VPHero .image {
+    order: -1;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    display: flex;
+    justify-content: center;
+    transform: translateY(-25px); /* 【核心修改】强制将图片向上移动 25px */
+  }
+
+  .VPHero .image-src {
+    max-width: 220px !important; /* 稍微缩小一点显得更精致 */
+    margin: 0 auto !important;
+  }
+
+  .VPHero .main {
+    padding-top: 0 !important;
+    margin-top: -40px !important; /* 【核心修改】强行拉近文字与图片的距离 */
+    text-align: center;
+  }
+
+  .VPHero .name, .VPHero .text {
+    margin: 0 auto !important;
+  }
+}
+
+/* 配合偏好设置：全局减弱动画 */
+html.reduce-motion * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* =========================================
+   系统级 UI 隐藏 (深浅色模式移至设置页)
+========================================= */
+.VPNavBarAppearance,
+.VPNavScreenAppearance {
+  display: none !important;
+}
