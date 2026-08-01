@@ -46,3 +46,18 @@ html.reduce-motion * {
 .VPNavScreenAppearance {
   display: none !important;
 }
+
+/* =========================================
+   系统级 UI 优化
+========================================= */
+/* 让导航栏中的“设置”项单独加粗并突出显示 */
+.VPNavBarMenuLink[href="/settings"] {
+  font-weight: 800 !important;
+  color: var(--vp-c-brand-1) !important;
+}
+
+/* 隐藏深浅色切换按钮 */
+.VPNavBarAppearance,
+.VPNavScreenAppearance {
+  display: none !important;
+}

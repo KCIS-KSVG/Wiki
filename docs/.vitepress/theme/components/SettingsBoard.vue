@@ -1,15 +1,47 @@
 <!-- docs/.vitepress/theme/components/SettingsBoard.vue -->
 <script setup>
+import { ref } from 'vue'
 import { useData } from 'vitepress'
 import { useSettings } from '../useSettings'
 
-// 直接接管 VitePress 原生的深浅色模式状态
 const { isDark } = useData() 
 const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearProgress } = useSettings()
+
+// 轻量级 Toast 提示逻辑
+const toastMsg = ref('')
+const showToast = ref(false)
+let toastTimer = null
+
+const triggerToast = (msg) => {
+  toastMsg.value = msg
+  showToast.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { showToast.value = false }, 2500)
+}
+
+// 交互触发事件
+const onNameBlur = () => { triggerToast('称呼已更新') }
+const onSettingChange = () => { triggerToast('设置已保存') }
+
+const handleClearProgress = () => {
+  if (confirm('确认要清除阅读历史记录吗？此操作不可恢复。')) {
+    clearProgress()
+    triggerToast('历史记录已清除')
+  }
+}
 </script>
 
 <template>
   <div class="ksvg-settings-panel">
+    
+    <!-- 全局状态提示 Toast -->
+    <Transition name="fade">
+      <div v-if="showToast" class="save-toast">
+        <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        {{ toastMsg }}
+      </div>
+    </Transition>
+
     <header class="settings-header">
       <a href="/" class="back-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -27,7 +59,8 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
             <span class="desc">系统将在弹窗问候时使用此名称</span>
           </div>
           <div class="setting-control">
-            <input type="text" v-model="userName" class="compact-input" placeholder="输入名称 (可选)" maxlength="20">
+            <!-- 失去焦点时触发保存成功提示 -->
+            <input type="text" v-model="userName" @blur="onNameBlur" @keydown.enter="$event.target.blur()" class="compact-input" placeholder="输入名称 (可选)" maxlength="20">
           </div>
         </div>
       </div>
@@ -36,7 +69,6 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
     <section class="settings-section">
       <h2 class="section-title">界面与阅读</h2>
       <div class="setting-list">
-        <!-- 新增：接管原生的深色模式 -->
         <div class="setting-item">
           <div class="setting-info">
             <label>深色模式</label>
@@ -44,7 +76,8 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
           </div>
           <div class="setting-control">
             <label class="toggle-switch">
-              <input type="checkbox" v-model="isDark">
+              <!-- 切换时触发保存提示 -->
+              <input type="checkbox" v-model="isDark" @change="onSettingChange">
               <span class="slider"></span>
             </label>
           </div>
@@ -57,7 +90,7 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
           </div>
           <div class="setting-control">
             <label class="toggle-switch">
-              <input type="checkbox" v-model="reduceMotion">
+              <input type="checkbox" v-model="reduceMotion" @change="onSettingChange">
               <span class="slider"></span>
             </label>
           </div>
@@ -75,7 +108,7 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
           </div>
           <div class="setting-control">
             <label class="toggle-switch">
-              <input type="checkbox" v-model="isTracking">
+              <input type="checkbox" v-model="isTracking" @change="onSettingChange">
               <span class="slider"></span>
             </label>
           </div>
@@ -88,7 +121,8 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
             <span v-else class="desc italic">暂无记录</span>
           </div>
           <div class="setting-control">
-            <button class="text-btn danger" @click="clearProgress" :disabled="!lastReadPath">清除记录</button>
+            <!-- 替换为带二次确认的方法 -->
+            <button class="text-btn danger" @click="handleClearProgress" :disabled="!lastReadPath">清除记录</button>
           </div>
         </div>
       </div>
@@ -97,12 +131,37 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
 </template>
 
 <style scoped>
+/* 收窄两侧边距，让布局更紧凑 */
 .ksvg-settings-panel {
-  max-width: 640px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 30px 10px; /* 减小上下和左右的 padding */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  position: relative;
 }
+
+/* 屏幕顶部正中弹出的绿色保存成功提示 */
+.save-toast {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10b981;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  z-index: 10;
+}
+.check-icon { margin-top: -1px; }
+
+.fade-enter-active, .fade-leave-active { transition: all 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translate(-50%, -10px); }
 
 .settings-header { margin-bottom: 2rem; }
 
@@ -117,11 +176,10 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
   margin-bottom: 12px;
   transition: color 0.2s;
 }
-
 .back-btn:hover { color: var(--vp-c-brand-1); }
 
 .settings-header h1 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--vp-c-text-1);
@@ -129,7 +187,6 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
 }
 
 .settings-section { margin-bottom: 2.5rem; }
-
 .section-title {
   font-size: 0.9rem;
   font-weight: 700;
@@ -151,10 +208,9 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 16px;
   border-bottom: 1px solid var(--vp-c-divider);
 }
-
 .setting-item:last-child { border-bottom: none; }
 
 .setting-info {
@@ -162,25 +218,14 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
   flex-direction: column;
   gap: 4px;
   flex: 1;
-  padding-right: 20px;
+  padding-right: 16px;
 }
-
-.setting-info label {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
-}
-
-.setting-info .desc {
-  font-size: 0.85rem;
-  color: var(--vp-c-text-2);
-  line-height: 1.4;
-}
-
+.setting-info label { font-size: 1.05rem; font-weight: 600; color: var(--vp-c-text-1); }
+.setting-info .desc { font-size: 0.85rem; color: var(--vp-c-text-2); line-height: 1.4; }
 .italic { font-style: italic; }
 
 .compact-input {
-  width: 180px;
+  width: 160px;
   padding: 8px 12px;
   font-size: 0.95rem;
   border: 1px solid var(--vp-c-divider);
@@ -190,19 +235,13 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
   text-align: right;
   transition: all 0.2s;
 }
-
 .compact-input:focus {
   outline: none;
   border-color: var(--vp-c-brand-1);
   box-shadow: 0 0 0 2px rgba(52, 81, 178, 0.2);
 }
 
-.record-link {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--vp-c-brand-1);
-  text-decoration: none;
-}
+.record-link { font-size: 0.95rem; font-weight: 600; color: var(--vp-c-brand-1); text-decoration: none; }
 .record-link:hover { text-decoration: underline; }
 
 .text-btn {
@@ -215,52 +254,27 @@ const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearPr
   border-radius: 6px;
   transition: background 0.2s;
 }
-
 .text-btn.danger { color: #ef4444; }
 .text-btn.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.1); }
 .text-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-
+.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
-
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: var(--vp-c-divider);
-  transition: .3s;
-  border-radius: 24px;
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--vp-c-divider); transition: .3s; border-radius: 24px;
 }
-
 .slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .3s;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+  background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
 input:checked + .slider { background-color: var(--vp-c-brand-1); }
 input:checked + .slider:before { transform: translateX(20px); }
 
+/* 移动端完美适配 */
 @media (max-width: 640px) {
-  .setting-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-  .setting-info { padding-right: 0; }
+  .setting-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .setting-info { padding-right: 0; width: 100%; }
   .compact-input { width: 100%; text-align: left; }
   .setting-control { width: 100%; display: flex; justify-content: flex-end; }
   .progress-item .setting-control { justify-content: flex-start; }
