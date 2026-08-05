@@ -5,9 +5,8 @@ import { useData } from 'vitepress'
 import { useSettings } from '../useSettings'
 
 const { isDark } = useData() 
-const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearProgress } = useSettings()
+const { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, searchEngine, clearProgress } = useSettings()
 
-// 轻量级 Toast 提示逻辑
 const toastMsg = ref('')
 const showToast = ref(false)
 let toastTimer = null
@@ -19,7 +18,6 @@ const triggerToast = (msg) => {
   toastTimer = setTimeout(() => { showToast.value = false }, 2500)
 }
 
-// 交互触发事件
 const onNameBlur = () => { triggerToast('称呼已更新') }
 const onSettingChange = () => { triggerToast('设置已保存') }
 
@@ -34,7 +32,6 @@ const handleClearProgress = () => {
 <template>
   <div class="ksvg-settings-panel">
     
-    <!-- 全局状态提示 Toast -->
     <Transition name="fade">
       <div v-if="showToast" class="save-toast">
         <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -59,7 +56,6 @@ const handleClearProgress = () => {
             <span class="desc">系统将在弹窗问候时使用此名称</span>
           </div>
           <div class="setting-control">
-            <!-- 失去焦点时触发保存成功提示 -->
             <input type="text" v-model="userName" @blur="onNameBlur" @keydown.enter="$event.target.blur()" class="compact-input" placeholder="输入名称 (可选)" maxlength="20">
           </div>
         </div>
@@ -67,7 +63,7 @@ const handleClearProgress = () => {
     </section>
 
     <section class="settings-section">
-      <h2 class="section-title">界面与阅读</h2>
+      <h2 class="section-title">界面与阅读扩展</h2>
       <div class="setting-list">
         <div class="setting-item">
           <div class="setting-info">
@@ -76,7 +72,6 @@ const handleClearProgress = () => {
           </div>
           <div class="setting-control">
             <label class="toggle-switch">
-              <!-- 切换时触发保存提示 -->
               <input type="checkbox" v-model="isDark" @change="onSettingChange">
               <span class="slider"></span>
             </label>
@@ -93,6 +88,21 @@ const handleClearProgress = () => {
               <input type="checkbox" v-model="reduceMotion" @change="onSettingChange">
               <span class="slider"></span>
             </label>
+          </div>
+        </div>
+
+        <!-- 新增：划词搜索引擎选择 -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label>划词划选搜索</label>
+            <span class="desc">文章中鼠标选中文字时，快速调用的搜索引擎</span>
+          </div>
+          <div class="setting-control">
+            <select v-model="searchEngine" @change="onSettingChange" class="compact-select">
+              <option value="baidu">百度 (Baidu)</option>
+              <option value="bing">微软 (Bing)</option>
+              <option value="google">谷歌 (Google)</option>
+            </select>
           </div>
         </div>
       </div>
@@ -121,7 +131,6 @@ const handleClearProgress = () => {
             <span v-else class="desc italic">暂无记录</span>
           </div>
           <div class="setting-control">
-            <!-- 替换为带二次确认的方法 -->
             <button class="text-btn danger" @click="handleClearProgress" :disabled="!lastReadPath">清除记录</button>
           </div>
         </div>
@@ -131,16 +140,14 @@ const handleClearProgress = () => {
 </template>
 
 <style scoped>
-/* 收窄两侧边距，让布局更紧凑 */
 .ksvg-settings-panel {
   max-width: 600px;
   margin: 0 auto;
-  padding: 30px 10px; /* 减小上下和左右的 padding */
+  padding: 30px 10px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: relative;
 }
 
-/* 屏幕顶部正中弹出的绿色保存成功提示 */
 .save-toast {
   position: absolute;
   top: -10px;
@@ -224,7 +231,7 @@ const handleClearProgress = () => {
 .setting-info .desc { font-size: 0.85rem; color: var(--vp-c-text-2); line-height: 1.4; }
 .italic { font-style: italic; }
 
-.compact-input {
+.compact-input, .compact-select {
   width: 160px;
   padding: 8px 12px;
   font-size: 0.95rem;
@@ -235,7 +242,7 @@ const handleClearProgress = () => {
   text-align: right;
   transition: all 0.2s;
 }
-.compact-input:focus {
+.compact-input:focus, .compact-select:focus {
   outline: none;
   border-color: var(--vp-c-brand-1);
   box-shadow: 0 0 0 2px rgba(52, 81, 178, 0.2);
@@ -271,11 +278,10 @@ const handleClearProgress = () => {
 input:checked + .slider { background-color: var(--vp-c-brand-1); }
 input:checked + .slider:before { transform: translateX(20px); }
 
-/* 移动端完美适配 */
 @media (max-width: 640px) {
   .setting-item { flex-direction: column; align-items: flex-start; gap: 12px; }
   .setting-info { padding-right: 0; width: 100%; }
-  .compact-input { width: 100%; text-align: left; }
+  .compact-input, .compact-select { width: 100%; text-align: left; }
   .setting-control { width: 100%; display: flex; justify-content: flex-end; }
   .progress-item .setting-control { justify-content: flex-start; }
 }

@@ -1,5 +1,15 @@
 // docs/.vitepress/theme/useSettings.ts
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
+
+// ★ 关键重构：提取为模块级全局单例状态，保证全站所有组件实时同步
+const isTracking = ref(true)
+const lastReadPath = ref('')
+const lastReadTitle = ref('')
+const userName = ref('')
+const reduceMotion = ref(false)
+const searchEngine = ref<'baidu' | 'bing' | 'google'>('baidu')
+
+let isInitialized = false
 
 function getPathWeight(path: string) {
   if (!path) return 0
@@ -16,51 +26,48 @@ function getPathWeight(path: string) {
   return score
 }
 
+function initSettings() {
+  if (typeof window === 'undefined' || isInitialized) return
+  isInitialized = true
+
+  const storedTracking = localStorage.getItem('ksvg_tracking')
+  if (storedTracking !== null) isTracking.value = storedTracking === 'true'
+
+  const storedMotion = localStorage.getItem('ksvg_reduce_motion')
+  if (storedMotion !== null) reduceMotion.value = storedMotion === 'true'
+
+  const storedEngine = localStorage.getItem('ksvg_search_engine') as any
+  if (storedEngine) searchEngine.value = storedEngine
+
+  lastReadPath.value = localStorage.getItem('ksvg_last_path') || ''
+  lastReadTitle.value = localStorage.getItem('ksvg_last_title') || ''
+  userName.value = localStorage.getItem('ksvg_user_name') || ''
+
+  if (reduceMotion.value) document.documentElement.classList.add('reduce-motion')
+}
+
+// 客户端全局监听并实时写入 LocalStorage
+if (typeof window !== 'undefined') {
+  watch([isTracking, userName, reduceMotion, searchEngine], ([trackingVal, nameVal, motionVal, engineVal]) => {
+    localStorage.setItem('ksvg_tracking', String(trackingVal))
+    localStorage.setItem('ksvg_user_name', nameVal.trim())
+    localStorage.setItem('ksvg_reduce_motion', String(motionVal))
+    localStorage.setItem('ksvg_search_engine', engineVal)
+
+    if (motionVal) document.documentElement.classList.add('reduce-motion')
+    else document.documentElement.classList.remove('reduce-motion')
+
+    if (!trackingVal) {
+      localStorage.removeItem('ksvg_last_path')
+      localStorage.removeItem('ksvg_last_title')
+      lastReadPath.value = ''
+      lastReadTitle.value = ''
+    }
+  })
+}
+
 export function useSettings() {
-  const isTracking = ref(true)
-  const lastReadPath = ref('')
-  const lastReadTitle = ref('')
-  const userName = ref('')
-  
-  // 新增设置项
-  const reduceMotion = ref(false) // 减弱动画效果
-
-  onMounted(() => {
-    if (typeof window !== 'undefined') {
-      const storedTracking = localStorage.getItem('ksvg_tracking')
-      if (storedTracking !== null) isTracking.value = storedTracking === 'true'
-      
-      const storedMotion = localStorage.getItem('ksvg_reduce_motion')
-      if (storedMotion !== null) reduceMotion.value = storedMotion === 'true'
-
-      lastReadPath.value = localStorage.getItem('ksvg_last_path') || ''
-      lastReadTitle.value = localStorage.getItem('ksvg_last_title') || ''
-      userName.value = localStorage.getItem('ksvg_user_name') || ''
-      
-      // 应用动画效果
-      if (reduceMotion.value) document.documentElement.classList.add('reduce-motion')
-    }
-  })
-
-  // 监听并保存
-  watch([isTracking, userName, reduceMotion], ([trackingVal, nameVal, motionVal]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ksvg_tracking', String(trackingVal))
-      localStorage.setItem('ksvg_user_name', nameVal.trim())
-      localStorage.setItem('ksvg_reduce_motion', String(motionVal))
-      
-      // 动态控制全站动画
-      if (motionVal) document.documentElement.classList.add('reduce-motion')
-      else document.documentElement.classList.remove('reduce-motion')
-
-      if (!trackingVal) {
-        localStorage.removeItem('ksvg_last_path')
-        localStorage.removeItem('ksvg_last_title')
-        lastReadPath.value = ''
-        lastReadTitle.value = ''
-      }
-    }
-  })
+  initSettings()
 
   const updateProgress = (newPath: string, newTitle: string) => {
     if (!isTracking.value || typeof window === 'undefined') return
@@ -81,9 +88,8 @@ export function useSettings() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('ksvg_last_path')
       localStorage.removeItem('ksvg_last_title')
-      alert('已重置阅读进度。')
     }
   }
 
-  return { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, clearProgress, updateProgress }
+  return { isTracking, lastReadPath, lastReadTitle, userName, reduceMotion, searchEngine, clearProgress, updateProgress }
 }
