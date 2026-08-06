@@ -11,9 +11,10 @@ permissions:
   pages: write
   id-token: write
 
+# 【核心修改】开启 cancel-in-progress: true，防止任务堆积卡死
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -27,11 +28,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22 # 升级到 Node 22 消除警告
+          node-version: 22
           cache: npm
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5 # 升级到 v5
+        uses: actions/configure-pages@v5
 
       - name: Install dependencies
         run: npm ci
