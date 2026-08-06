@@ -3,7 +3,8 @@ import DefaultTheme from 'vitepress/theme'
 import { h, watch } from 'vue'
 import { useRoute, useData } from 'vitepress'
 import ResumeBanner from './components/ResumeBanner.vue'
-import SelectionSearch from './components/SelectionSearch.vue' // 引入划词搜索组件
+import SelectionSearch from './components/SelectionSearch.vue'
+import WelcomeModal from './components/WelcomeModal.vue' // 1. 引入新手引导
 import './custom.css'
 import { useSettings } from './useSettings'
 
@@ -12,7 +13,10 @@ export default {
   Layout: () => {
     return h(DefaultTheme.Layout, null, {
       'nav-bar-content-after': () => h(ResumeBanner),
-      'layout-bottom': () => h(SelectionSearch) // 全局注入划词搜索
+      'layout-bottom': () => [
+        h(SelectionSearch),
+        h(WelcomeModal) // 2. 挂载引导弹窗
+      ]
     })
   },
   setup() {
@@ -24,7 +28,6 @@ export default {
       () => route.path,
       (newPath) => {
         const isExcluded = newPath === '/' || newPath === '/index.html' || newPath.includes('settings') || newPath.includes('404')
-        
         if (typeof window !== 'undefined' && isTracking.value && !isExcluded) {
           setTimeout(() => {
             const currentTitle = page.value.title
