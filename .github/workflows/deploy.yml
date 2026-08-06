@@ -2,41 +2,36 @@
 name: Deploy KSVG Wiki to GitHub Pages
 
 on:
-  # 当推送到 main 分支时触发部署 (如果你的主分支叫 master，请把这里改成 master)
   push:
-    branches: [main]
-  # 允许从 GitHub Actions 页面手动触发
+    branches: [main] # 如果你的分支叫 master，请改成 master
   workflow_dispatch:
 
-# 设置 GITHUB_TOKEN 的权限，以允许部署到 GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 只允许同时进行一次部署
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  # 构建工作
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 如果未启用 lastUpdated，不需要此项
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22 # 升级到 Node 22 消除警告
           cache: npm
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5 # 升级到 v5
 
       - name: Install dependencies
         run: npm ci
@@ -49,7 +44,6 @@ jobs:
         with:
           path: docs/.vitepress/dist
 
-  # 部署工作
   deploy:
     environment:
       name: github-pages
